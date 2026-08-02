@@ -31,6 +31,7 @@ README.md              This file
 - **Length filter** — practise short (3–4), medium (5–6), or long (7+) words, or all
 - **Adjustable pace** — the revealed answer stays up for 0.6s, 1s, or 2s before the next card
 - **Audio on/off** toggle
+- **Settings are remembered** — bank, length, answer time, and audio are saved to the browser and restored on your next visit
 - **No repeats** until the current pool is exhausted (shuffled-bag randomisation)
 - **Aggressive preloading** — the next clip is loaded before you reveal, and the whole bank is prefetched in the background so playback never lags
 - **Installable and offline** — add it to your home screen and it works with no connection
@@ -50,6 +51,8 @@ README.md              This file
 | **Length** | All / 3–4 / 5–6 / 7+ | Filter by number of letters |
 | **Answer time** | 0.6s / 1s / 2s | How long the revealed answer stays up |
 | **Audio** | On / Off | Whether the word is spoken on reveal |
+
+All four controls are **remembered between visits**, so the setup you practise with is the one you get when you come back — no reconfiguring each session.
 
 **Tip:** *Both* is the hardest mode — with names mixed into ordinary vocabulary you can't guess a word from its first few letters, which is much closer to real-world fingerspelling.
 
@@ -86,6 +89,8 @@ The Gallaudet handshape font is baked into `index.html` as a data URI, so there 
 
 **Randomisation.** A "shuffled bag": the active pool is shuffled and drawn down to the end before reshuffling, so you never see the same word twice in a row and every word comes up once per cycle.
 
+**Settings.** The four controls are written to `localStorage` under the key `fingerspelling:settings:v1` whenever you change one, and re-applied synchronously at startup so the rail never flashes the defaults. Every value is validated against the list of options it belongs to, and anything missing or unrecognised falls back to the default — a stale or hand-edited entry can't leave the app in a mode with no words in it. Storage failures (private browsing, a full quota) are swallowed: settings simply stop persisting, and practice is unaffected.
+
 ---
 
 ## Rebuilding or changing the audio
@@ -98,7 +103,7 @@ The clips are produced by `generate_audio.py`. Common changes:
 
 The script's header lists the exact dependencies and where to download the Kokoro model files. It is resumable — interrupting and re-running continues where it left off.
 
-If you change `index.html`, `sw.js`, or the icons, bump `CACHE_VERSION` in `sw.js` so returning visitors pick up the new shell.
+If you change `index.html`, `sw.js`, or the icons, bump `CACHE_VERSION` in `sw.js` so returning visitors pick up the new shell. Leave `AUDIO_VERSION` alone unless the clips themselves change — it is versioned separately so a shell update doesn't discard the visitor's prefetched audio and make them download the whole bank again.
 
 ---
 

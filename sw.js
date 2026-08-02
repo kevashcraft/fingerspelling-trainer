@@ -6,9 +6,13 @@
    Bump CACHE_VERSION whenever index.html, sw.js, or the icons change so
    returning visitors pick up the new files. */
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
+// Versioned separately, and deliberately left alone when CACHE_VERSION moves:
+// the clips don't change when the shell does, and re-keying this would drop
+// the whole prefetched bank and make returning visitors download it again.
+const AUDIO_VERSION = 'v1';
 const SHELL_CACHE = 'fs-shell-' + CACHE_VERSION;
-const AUDIO_CACHE = 'fs-audio-' + CACHE_VERSION;   // kept across versions on purpose
+const AUDIO_CACHE = 'fs-audio-' + AUDIO_VERSION;
 
 // Relative URLs resolve against the SW's own location (the repo root on
 // GitHub Pages project sites), so this works at /<user>.github.io/<repo>/.

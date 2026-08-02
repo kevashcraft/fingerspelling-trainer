@@ -224,6 +224,41 @@ const hands=document.getElementById('hands'),
 let lenMode='all', bankMode='words', revealMs=1000;
 let bag=[], current=null, state='question', seen=0, timer=null;
 
+/* ---------- settings (remembered across visits) ----------
+   The declarations above are the defaults; anything missing or unrecognised
+   in storage falls back to them, so a stale or hand-edited value can't wedge
+   the app into a mode with no words in it. */
+const SETTINGS_KEY='fingerspelling:settings:v1';
+
+/* reflect a value in one of the segmented controls */
+function press(segId,attr,value){
+  const seg=document.getElementById(segId);
+  [...seg.children].forEach(b=>b.setAttribute('aria-pressed',b.dataset[attr]===value));
+}
+
+function saveSettings(){
+  try{
+    localStorage.setItem(SETTINGS_KEY,JSON.stringify({
+      bank:bankMode, len:lenMode, ms:revealMs, audio:audioOn?'on':'off'
+    }));
+  }catch(e){}   // private mode or a full quota — settings just don't persist
+}
+
+function loadSettings(){
+  let s={};
+  try{ s=JSON.parse(localStorage.getItem(SETTINGS_KEY))||{}; }catch(e){}
+  const pick=(v,allowed,fallback)=>allowed.includes(v)?v:fallback;
+  bankMode=pick(s.bank,['words','names','both'],bankMode);
+  lenMode =pick(s.len,['all','s','m','l'],lenMode);
+  revealMs=pick(+s.ms,[600,1000,2000],revealMs);
+  audioOn =pick(s.audio,['on','off'],audioOn?'on':'off')==='on';
+
+  press('bankSeg','bank',bankMode);
+  press('lenSeg','len',lenMode);
+  press('paceSeg','ms',String(revealMs));
+  press('audioSeg','audio',audioOn?'on':'off');
+}
+
 const inRange=w=>lenMode==='all'||(lenMode==='s'&&w.length<=4)||
                  (lenMode==='m'&&w.length>=5&&w.length<=6)||
                  (lenMode==='l'&&w.length>=7);
@@ -317,24 +352,24 @@ function restart(){
 document.getElementById('audioSeg').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return;
   [...e.currentTarget.children].forEach(x=>x.setAttribute('aria-pressed',x===b));
-  audioOn=b.dataset.audio==='on'; b.blur();
+  audioOn=b.dataset.audio==='on'; b.blur(); saveSettings();
   if(!audioOn){ try{player.pause();}catch(e){} }
   else preloadCurrent();   // ready for the next reveal, but don't replay now
 });
 document.getElementById('bankSeg').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return;
   [...e.currentTarget.children].forEach(x=>x.setAttribute('aria-pressed',x===b));
-  bankMode=b.dataset.bank; b.blur(); restart();
+  bankMode=b.dataset.bank; b.blur(); saveSettings(); restart();
 });
 document.getElementById('lenSeg').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return;
   [...e.currentTarget.children].forEach(x=>x.setAttribute('aria-pressed',x===b));
-  lenMode=b.dataset.len; b.blur(); restart();
+  lenMode=b.dataset.len; b.blur(); saveSettings(); restart();
 });
 document.getElementById('paceSeg').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return;
   [...e.currentTarget.children].forEach(x=>x.setAttribute('aria-pressed',x===b));
-  revealMs=+b.dataset.ms; b.blur();
+  revealMs=+b.dataset.ms; b.blur(); saveSettings();
 });
 
 addEventListener('resize',()=>{
@@ -382,6 +417,7 @@ if('serviceWorker' in navigator){
 }
 
 /* ---------- init ---------- */
+loadSettings();   // synchronous, so the rail never flashes the defaults
 (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve())
   .then(()=>{ poolEl.textContent=pool().length; refill(); nextCard(); });
 </script>
